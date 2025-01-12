@@ -5,57 +5,53 @@
 import {useEffect, useState} from "react";
 
 const PokemonList = () => {
-    const [data, setData]= useState([]);
-    const [error, setError] = useState(null);
+    const [pokemons, setPokemons]= useState([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
     const [count, setCount] = useState(0);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        setLoading(true);
+        fetch(`https://pokeapi.co/api/v2/pokemon?limit=5&offset=${count}`)
+            .then((res) => res.json())
+            .then((data) => {
+                setPokemons([...pokemons, ...data.results]);
+                setTotal(data.count);
+                setLoading(false);
+            })
+    }, [count]);
 
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=5&offset=${count}`);
-            if (!response.ok) {
-                throw new Error('Network response not OK');
-            }
-            const data = await response.json();
-            setData((prevData) => [...prevData, ...data.results]);
-            setTotal(data.count);
-            setCount((prevCount) => prevCount + data.results.length);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // const fetchData = async () => {
+    //     try {
+    //         setLoading(true);
+    //         const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=5&offset=${count}`);
+    //         if (!response.ok) {
+    //             throw new Error('Network response not OK');
+    //         }
+    //         const data = await response.json();
+    //         setData((prevData) => [...prevData, ...data.results]);
+    //         setTotal(data.count);
+    //         setCount((prevCount) => prevCount + data.results.length);
+    //     } catch (err) {
+    //         setError(err.message);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
-    if (loading) {
-        return <div>Loading...</div>
-    }
+    const hasLoadedAllData = pokemons.length === total;
 
-    if (error) {
-        return <div>Error: {error}</div>
-    }
-
-    const handleLoadMore = () => {
-        if (!loading && count < total) {
-            fetchData();
-        }
-    };
 
     return (
         <div>
+            {loading && <span>Loading...</span>}
             <ul>
-                {data.map((item) => (
+                {pokemons.map((item) => (
                     <li key={item.name}>{item.name}</li>
                 ))}
             </ul>
-            <p>Displaying {count} of {total} results</p>
-            {count < total && (<button onClick={handleLoadMore} disabled={loading}>Load more</button>)}
+            <p>Displaying {pokemons.length} of {total} results</p>
+            {!hasLoadedAllData && (<button onClick={() => setCount(count + 5)}>Load more</button>)}
         </div>
     );
 
